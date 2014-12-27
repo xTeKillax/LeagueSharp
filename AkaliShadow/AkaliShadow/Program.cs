@@ -54,7 +54,7 @@ namespace AkaliShadow
 
             SpellList = new List<Spell>() { Q, W, E, R };
 
-            (Config = new Menu("Best Akali Africa", ChampionName, true)).AddToMainMenu();
+            (Config = new Menu("Akali Shadow", ChampionName, true)).AddToMainMenu();
 
             var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
             TargetSelector.AddToMenu(targetSelectorMenu);
@@ -82,9 +82,6 @@ namespace AkaliShadow
             Config.SubMenu("Farm").AddItem(new MenuItem("UseQFarm", "Use Q").SetValue(new StringList(new[] { "Freeze", "LaneClear", "Both", "No" }, 2)));
             Config.SubMenu("Farm").AddItem(new MenuItem("UseEFarm", "Use E").SetValue(new StringList(new[] { "Freeze", "LaneClear", "Both", "No" }, 1)));
             Config.SubMenu("Farm").AddItem(new MenuItem("hitCounter", "Use E if will hit min").SetValue(new Slider(3, 1, 6)));
-            /*Config.SubMenu("Farm").AddItem(new MenuItem("FreezeActive", "Freeze!").SetValue(new KeyBind(Config.Item("Farm").GetValue<KeyBind>().Key, KeyBindType.Press)));
-            Config.SubMenu("Farm").AddItem(new MenuItem("LaneClearActive", "LaneClear!").SetValue(new KeyBind(Config.Item("LaneClear").GetValue<KeyBind>().Key, KeyBindType.Press)));*/
-
 
             Config.AddSubMenu(new Menu("Drawings", "Drawing"));
             Config.SubMenu("Drawing").AddItem(new MenuItem("Qrange", "Q Range").SetValue(new Circle(true, Color.FromArgb(150, Color.IndianRed))));
@@ -109,7 +106,7 @@ namespace AkaliShadow
             Drawing.OnDraw += OnDraw;
             GameObject.OnCreate += OnCreateObj;
 
-            Game.PrintChat("== BestAkaliAfrica Loaded ==");
+            Game.PrintChat("<font color = \"#6B9FE3\">Akali Shadow</font> by <font color = \"#E3AF6B\">BestAkaliAfrica</font>. You like ? Buy a coffee to Joduskame or me :)");
         }
 
         static void OnUpdate(EventArgs args)
@@ -129,7 +126,7 @@ namespace AkaliShadow
                     break;
             }
 
-            if (Config.SubMenu("Harass").Item("HarassActiveT").GetValue<KeyBind>().Active
+            if (Config.SubMenu("Harass").Item("HarassActive").GetValue<KeyBind>().Active
                 || Config.SubMenu("Harass").Item("HarassActiveT").GetValue<bool>())
             {
                 Harass();
@@ -179,7 +176,7 @@ namespace AkaliShadow
 
             //Jump with R if dist > E.Range and have enough energy for R+E
             if (myHero.Distance(Target) <= R.Range
-                && (myHero.Distance(Target) > E.Range && (HasEnergyFor(false, true, false, true)) || (!Q.IsReady() && !E.IsReady()))
+                && (myHero.Distance(Target) > E.Range && HasEnergyFor(false, true, false, true))
                 && R.IsReady() && Config.SubMenu("Combo").Item("UseRCombo").GetValue<bool>())
             {
                 R.Cast(Target, packetCast);
