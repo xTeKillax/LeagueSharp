@@ -8,9 +8,10 @@ using System.Threading.Tasks;
 using Color = System.Drawing.Color;
 
 
-//add some R logic
-//red part in damages
-//Credits: Esk0r, princer007, 
+//add delay R
+//W escape points
+//target lock
+//Credits: Esk0r, princer007, xQx, jackisback
 
 namespace AkaliShadow
 {
@@ -27,6 +28,7 @@ namespace AkaliShadow
 
         public static Orbwalking.Orbwalker Orbwalker;
         public static Menu Config;
+        public static Menu targetSelectorMenu;
 
         static bool packetCast = false;
         public static bool qInAir = true;
@@ -56,7 +58,7 @@ namespace AkaliShadow
 
             (Config = new Menu("Akali Shadow", ChampionName, true)).AddToMainMenu();
 
-            var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
+            targetSelectorMenu = new Menu("Target Selector", "Target Selector");
             TargetSelector.AddToMenu(targetSelectorMenu);
             Config.AddSubMenu(targetSelectorMenu);
 
@@ -98,6 +100,7 @@ namespace AkaliShadow
                 Utility.HpBarDamageIndicator.Enabled = eventArgs.GetNewValue<bool>();
             };
 
+            new AssassinManager();
             Orbwalker.SetAttack(true);
             Orbwalker.SetMovement(true);
 
@@ -105,8 +108,8 @@ namespace AkaliShadow
             Game.OnGameUpdate += OnUpdate;
             Drawing.OnDraw += OnDraw;
             GameObject.OnCreate += OnCreateObj;
-
-            Game.PrintChat("<font color = \"#6B9FE3\">Akali Shadow</font> by <font color = \"#E3AF6B\">BestAkaliAfrica</font>. You like ? Buy a coffee to Joduskame or me :)");
+            
+            Game.PrintChat("<font color = \"#6B9FE3\">Akali Shadow</font><font color = \"#E3AF6B\"> by BestAkaliAfrica</font>. You like ? Buy a coffee to Joduskame or me :p");
         }
 
         static void OnUpdate(EventArgs args)
@@ -114,16 +117,16 @@ namespace AkaliShadow
             switch (Orbwalker.ActiveMode)
             {
                 case Orbwalking.OrbwalkingMode.Combo:
-                    Combo();
-                    break;
+                    Combo(GetEnemy);
+                break;
 
                 case Orbwalking.OrbwalkingMode.Mixed:
                     Farm();
-                    break;
+                break;
 
                 case Orbwalking.OrbwalkingMode.LaneClear:
                     Farm(true);
-                    break;
+                break;
             }
 
             if (Config.SubMenu("Harass").Item("HarassActive").GetValue<KeyBind>().Active
@@ -160,9 +163,9 @@ namespace AkaliShadow
          *  Mechanics stuff
          ******************************************/
 
-        private static void Combo()
+        private static void Combo(Obj_AI_Hero Target)
         {
-            var Target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
+            //var Target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
             double eDamage = Damage.GetSpellDamage(myHero, Target, SpellSlot.E);
 
             CastItems(Target);
@@ -388,6 +391,28 @@ namespace AkaliShadow
                 return true;
             else
                 return false;
+        }
+
+        static Obj_AI_Hero GetEnemy
+        {
+            get
+            {
+                var assassinRange = targetSelectorMenu.Item("AssassinSearchRange").GetValue<Slider>().Value;
+                var vEnemy = ObjectManager.Get<Obj_AI_Hero>().Where(
+                enemy => enemy.Team != ObjectManager.Player.Team 
+                      && !enemy.IsDead && enemy.IsVisible 
+                      && targetSelectorMenu.Item("Assassin" + enemy.ChampionName) != null 
+                      && targetSelectorMenu.Item("Assassin" + enemy.ChampionName).GetValue<bool>() 
+                      && ObjectManager.Player.Distance(enemy.ServerPosition) < assassinRange);
+
+                if (targetSelectorMenu.Item("AssassinSelectOption").GetValue<StringList>().SelectedIndex == 1)
+                {
+                    vEnemy = (from vEn in vEnemy select vEn).OrderByDescending(vEn => vEn.MaxHealth);
+                }
+                Obj_AI_Hero[] objAiHeroes = vEnemy as Obj_AI_Hero[] ?? vEnemy.ToArray();
+                Obj_AI_Hero t = !objAiHeroes.Any() ? TargetSelector.GetTarget(1400, TargetSelector.DamageType.Magical) : objAiHeroes[0];
+                return t;
+            }
         }
     }
 }
