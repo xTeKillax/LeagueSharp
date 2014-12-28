@@ -12,3 +12,4 @@ C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShad
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\SharpDX.Toolkit.Graphics.xml
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\obj\Debug\AkaliShadow.exe
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\obj\Debug\AkaliShadow.pdb
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\obj\Debug\AkaliShadow.csprojResolveAssemblyReference.cache

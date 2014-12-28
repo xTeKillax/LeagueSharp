@@ -10,7 +10,6 @@ using Color = System.Drawing.Color;
 
 //add delay R
 //W escape points
-//target lock
 //Credits: Esk0r, princer007, xQx, jackisback
 
 namespace AkaliShadow
@@ -86,10 +85,10 @@ namespace AkaliShadow
             Config.SubMenu("Farm").AddItem(new MenuItem("hitCounter", "Use E if will hit min").SetValue(new Slider(3, 1, 6)));
 
             Config.AddSubMenu(new Menu("Drawings", "Drawing"));
-            Config.SubMenu("Drawing").AddItem(new MenuItem("Qrange", "Q Range").SetValue(new Circle(true, Color.FromArgb(150, Color.IndianRed))));
+            Config.SubMenu("Drawing").AddItem(new MenuItem("Qrange", "Q Range").SetValue(new Circle(true, Color.FromArgb(255, Color.SkyBlue))));
             Config.SubMenu("Drawing").AddItem(new MenuItem("Wrange", "W Range").SetValue(new Circle(true, Color.FromArgb(150, Color.IndianRed))));
-            Config.SubMenu("Drawing").AddItem(new MenuItem("Erange", "E Range").SetValue(new Circle(false, Color.FromArgb(150, Color.DarkRed))));
-            Config.SubMenu("Drawing").AddItem(new MenuItem("Rrange", "R Range").SetValue(new Circle(false, Color.FromArgb(150, Color.DarkRed))));
+            Config.SubMenu("Drawing").AddItem(new MenuItem("Erange", "E Range").SetValue(new Circle(false, Color.FromArgb(150, Color.LimeGreen))));
+            Config.SubMenu("Drawing").AddItem(new MenuItem("Rrange", "R Range").SetValue(new Circle(false, Color.FromArgb(255, Color.Black))));
             MenuItem fullComboDamageItem = Config.SubMenu("Drawing").AddItem(new MenuItem("FullComboDraw", "Draw fullCombo damage").SetValue(true));
 
             Utility.HpBarDamageIndicator.DamageToUnit = getComboDamage;
@@ -179,7 +178,8 @@ namespace AkaliShadow
 
             //Jump with R if dist > E.Range and have enough energy for R+E
             if (myHero.Distance(Target) <= R.Range
-                && (myHero.Distance(Target) > E.Range && HasEnergyFor(false, true, false, true))
+                && ((myHero.Distance(Target) > E.Range && (HasEnergyFor(false, true, false, true) || HasBuff(Target, "AkaliMota")))
+                || Damage.GetSpellDamage(myHero, Target, SpellSlot.R) >= Target.Health)
                 && R.IsReady() && Config.SubMenu("Combo").Item("UseRCombo").GetValue<bool>())
             {
                 R.Cast(Target, packetCast);
@@ -237,7 +237,7 @@ namespace AkaliShadow
                 }
 
                 if (E.IsReady() && myHero.Distance(Target) <= E.Range
-                    && (HasBuff(Target, "AkaliMota") || Damage.GetSpellDamage(myHero, Target, SpellSlot.E) <= Target.Health) && Config.SubMenu("Harass").Item("UseEHarass").GetValue<bool>())
+                    && (HasBuff(Target, "AkaliMota") || Damage.GetSpellDamage(myHero, Target, SpellSlot.E) >= Target.Health) && Config.SubMenu("Harass").Item("UseEHarass").GetValue<bool>())
                 {
                     E.Cast(packetCast);
                 }
