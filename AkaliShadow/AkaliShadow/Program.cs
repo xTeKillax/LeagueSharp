@@ -237,13 +237,13 @@ namespace AkaliShadow
 
             if(wCountdown)
             {
-                int remainingTime = wTick + 9000 - Environment.TickCount;
-                if (remainingTime > 2)
+                int remainingTime = 9 - ((Environment.TickCount - wTick) / 1000);
+                if (remainingTime > 0)
                 {
                     Vector2 drawPos = Drawing.WorldToScreen(myHero.Position);
                     wCountdownText.X = (int)drawPos.X;
                     wCountdownText.Y = (int)drawPos.Y - 20;
-                    wCountdownText.text = (remainingTime / 1000).ToString();
+                    wCountdownText.text = remainingTime.ToString();
                     wCountdownText.OnEndScene();
                 }
                 else
