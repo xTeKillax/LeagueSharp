@@ -1,38 +1,50 @@
 ﻿using LeagueSharp;
 using LeagueSharp.Common;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+
 using Color = System.Drawing.Color;
 
 
-//add delay R
-//W escape points
+
 //Credits: Esk0r, princer007, xQx, jackisback
 
 namespace AkaliShadow
 {
     internal class Program
     {
+        #region Variables
         public const string ChampionName = "Akali";
-        public static Obj_AI_Hero myHero = ObjectManager.Player;
+        private static Obj_AI_Hero myHero = ObjectManager.Player;
 
-        public static Spell Q, W, E, R;
-        public static SpellSlot IgniteSlot;
-        public static List<Spell> SpellList;
-        public static Items.Item Hex, Dfg, BwC;
+        private static Spell Q, W, E, R;
+        private static SpellSlot IgniteSlot;
+        private static List<Spell> SpellList;
+        private static Items.Item Hex, Dfg, BwC;
 
 
         public static Orbwalking.Orbwalker Orbwalker;
         public static Menu Config;
         public static Menu targetSelectorMenu;
 
-        static bool packetCast = false;
-        public static bool qInAir = true;
+        private static bool packetCast = false;
+        private static bool qInAir = true;
+        private static bool wCountdown = false;
+        private static bool drawWspots = false;
+        private static List<Vector3> _WardSpots;
+        private const int SPOT_MAGNET_RADIUS = 125;
+        private static int wTick = 0;
+        private static Render.Text wCountdownText;
 
+        //private static System.IO.StreamWriter debug_output;
+        #endregion
 
+        #region GameFunction
         static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
@@ -55,6 +67,8 @@ namespace AkaliShadow
 
             SpellList = new List<Spell>() { Q, W, E, R };
 
+            wCountdownText = new Render.Text("", new Vector2(0, 0), 25, SharpDX.Color.LightYellow, "Impact");
+
             (Config = new Menu("Akali Shadow", ChampionName, true)).AddToMainMenu();
 
             targetSelectorMenu = new Menu("Target Selector", "Target Selector");
@@ -69,6 +83,7 @@ namespace AkaliShadow
             Config.SubMenu("Combo").AddItem(new MenuItem("UseQCombo", "Use Q").SetValue(true));
             Config.SubMenu("Combo").AddItem(new MenuItem("UseECombo", "Use E").SetValue(true));
             Config.SubMenu("Combo").AddItem(new MenuItem("UseRCombo", "Use R").SetValue(true));
+            Config.SubMenu("Combo").AddItem(new MenuItem("Rdelay", "Delay Between R").SetValue(new Slider(0, 0, 2000)));
 
 
             Config.AddSubMenu(new Menu("Harass", "Harass"));
@@ -86,10 +101,16 @@ namespace AkaliShadow
 
             Config.AddSubMenu(new Menu("Drawings", "Drawing"));
             Config.SubMenu("Drawing").AddItem(new MenuItem("Qrange", "Q Range").SetValue(new Circle(true, Color.FromArgb(255, Color.SkyBlue))));
-            Config.SubMenu("Drawing").AddItem(new MenuItem("Wrange", "W Range").SetValue(new Circle(true, Color.FromArgb(150, Color.IndianRed))));
+            Config.SubMenu("Drawing").AddItem(new MenuItem("Wrange", "W Range").SetValue(new Circle(false, Color.FromArgb(150, Color.IndianRed))));
             Config.SubMenu("Drawing").AddItem(new MenuItem("Erange", "E Range").SetValue(new Circle(false, Color.FromArgb(150, Color.LimeGreen))));
-            Config.SubMenu("Drawing").AddItem(new MenuItem("Rrange", "R Range").SetValue(new Circle(false, Color.FromArgb(255, Color.Black))));
+            Config.SubMenu("Drawing").AddItem(new MenuItem("Rrange", "R Range").SetValue(new Circle(true, Color.FromArgb(255, Color.Black))));
+            Config.SubMenu("Drawing").AddItem(new MenuItem("spotColor", "W spot circle").SetValue(new Circle(false, Color.FromArgb(200, Color.Crimson))));
             MenuItem fullComboDamageItem = Config.SubMenu("Drawing").AddItem(new MenuItem("FullComboDraw", "Draw fullCombo damage").SetValue(true));
+            Config.SubMenu("Drawing").AddItem(new MenuItem("wCountdown", "Draw W countdown").SetValue(true));
+
+            Config.AddSubMenu(new Menu("Misc", "Misc"));
+            Config.SubMenu("Misc").AddItem(new MenuItem("wSpotActive", "W perfect spot (press once and left click)").SetValue(
+            new KeyBind("W".ToCharArray()[0], KeyBindType.Press)));
 
             Utility.HpBarDamageIndicator.DamageToUnit = getComboDamage;
             Utility.HpBarDamageIndicator.Enabled = fullComboDamageItem.GetValue<bool>();
@@ -103,29 +124,36 @@ namespace AkaliShadow
             Orbwalker.SetAttack(true);
             Orbwalker.SetMovement(true);
 
+            InitializeWardSpots();
+
             //Game event callback
             Game.OnGameUpdate += OnUpdate;
-            Drawing.OnDraw += OnDraw;
+            Game.OnWndProc += OnWndProc;
+            Obj_AI_Base.OnProcessSpellCast += OnProcessSpellCast;
             GameObject.OnCreate += OnCreateObj;
-            
+            Drawing.OnDraw += OnDraw;
+
+            //debug_output = new System.IO.StreamWriter("c:\\AkaliShadow.log");
             Game.PrintChat("<font color = \"#6B9FE3\">Akali Shadow</font><font color = \"#E3AF6B\"> by BestAkaliAfrica</font>. You like ? Buy a coffee to Joduskame or me :p");
         }
-
-        static void OnUpdate(EventArgs args)
+        
+        private static void OnUpdate(EventArgs args)
         {
             switch (Orbwalker.ActiveMode)
             {
                 case Orbwalking.OrbwalkingMode.Combo:
-                    Combo(GetEnemy);
-                break;
+                    var Target = GetEnemy;
+                    if (Target != null)
+                        Combo(Target);
+                    break;
 
                 case Orbwalking.OrbwalkingMode.Mixed:
                     Farm();
-                break;
+                    break;
 
                 case Orbwalking.OrbwalkingMode.LaneClear:
                     Farm(true);
-                break;
+                    break;
             }
 
             if (Config.SubMenu("Harass").Item("HarassActive").GetValue<KeyBind>().Active
@@ -135,18 +163,62 @@ namespace AkaliShadow
             }
         }
 
+
+        private static void OnWndProc(WndEventArgs args)
+        {
+            //a key is pressed
+            if (args.Msg == (uint)WindowsMessages.WM_KEYDOWN)
+            {
+                //is the key for wSpotActive ?
+                if (args.WParam == Config.SubMenu("Misc").Item("wSpotActive").GetValue<KeyBind>().Key)
+                    drawWspots = true;
+
+
+                //if (args.WParam == 0x60) //numpad 0
+                //{
+                //    string line = "_WardSpots.Add(new Vector3(" + Game.CursorPos.X + "f, " + Game.CursorPos.Y + "f, " + Game.CursorPos.Z + "f));";
+                //    debug_output.WriteLine(line + "\r\n");
+                //    Game.PrintChat(line);
+                //}
+                //if (args.WParam == 0x61) //numpad 1
+                //    debug_output.Close();
+            }
+            else if (args.Msg == (uint)WindowsMessages.WM_LBUTTONDOWN && drawWspots)
+            {
+                drawWspots = false;
+
+                foreach (Vector3 safeSpot in _WardSpots)
+                    if (safeSpot.Distance(Game.CursorPos) <= SPOT_MAGNET_RADIUS)
+                        W.Cast(safeSpot);
+            }
+            else if ((args.Msg == (uint)WindowsMessages.WM_LBUTTONUP || args.Msg == (uint)WindowsMessages.WM_RBUTTONDOWN) && drawWspots)
+                drawWspots = false;
+        }
+
+        private static void OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (Config.SubMenu("Drawing").Item("wCountdown").GetValue<bool>())
+            {
+                if (sender.Type == GameObjectType.obj_AI_Hero && sender.NetworkId == myHero.NetworkId)
+                {
+                    if (args.SData.Name.Equals("AkaliSmokeBomb"))
+                    {
+                        wCountdown = true;
+                        wTick = Environment.TickCount;
+                    }
+                }
+            }
+        }
+
         private static void OnCreateObj(GameObject sender, EventArgs args)
         {
             //Detect whenever our Q land on someone
-            //TODO: check its not the Q of an enemy akali.
-            if (sender.Name.Contains("akali_markOftheAssasin_marker_tar.troy"))
+            if (sender.Name.Contains("akali_markOftheAssasin_marker_tar.troy") && !sender.IsEnemy )
                 qInAir = false;
         }
+        #endregion
 
-        /******************************************
-         *  Graphics stuff
-         ******************************************/
-
+        #region Graphics
         private static void OnDraw(EventArgs args)
         {
             foreach (var spell in SpellList)
@@ -155,13 +227,32 @@ namespace AkaliShadow
                 if (menuItem.Active)
                     Utility.DrawCircle(myHero.Position, spell.Range, menuItem.Color);
             }
+
+            if (drawWspots)
+            {
+                foreach (Vector3 safeSpot in _WardSpots)
+                    if(Render.OnScreen(Drawing.WorldToScreen(safeSpot)))
+                        Utility.DrawCircle(safeSpot, SPOT_MAGNET_RADIUS, Config.SubMenu("Drawing").Item("spotColor").GetValue<Circle>().Color);
+            }
+
+            if(wCountdown)
+            {
+                int remainingTime = wTick + 9000 - Environment.TickCount;
+                if (remainingTime > 2)
+                {
+                    Vector2 drawPos = Drawing.WorldToScreen(myHero.Position);
+                    wCountdownText.X = (int)drawPos.X;
+                    wCountdownText.Y = (int)drawPos.Y - 20;
+                    wCountdownText.text = (remainingTime / 1000).ToString();
+                    wCountdownText.OnEndScene();
+                }
+                else
+                    wCountdown = false;
+            }
         }
+        #endregion
 
-
-        /******************************************
-         *  Mechanics stuff
-         ******************************************/
-
+        #region Mechanics
         private static void Combo(Obj_AI_Hero Target)
         {
             //var Target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
@@ -179,10 +270,11 @@ namespace AkaliShadow
             //Jump with R if dist > E.Range and have enough energy for R+E
             if (myHero.Distance(Target) <= R.Range
                 && ((myHero.Distance(Target) > E.Range && (HasEnergyFor(false, true, false, true) || HasBuff(Target, "AkaliMota")))
-                || Damage.GetSpellDamage(myHero, Target, SpellSlot.R) >= Target.Health)
-                && R.IsReady() && Config.SubMenu("Combo").Item("UseRCombo").GetValue<bool>())
+                || (Damage.GetSpellDamage(myHero, Target, SpellSlot.R) + myHero.GetAutoAttackDamage(Target, true)) >= Target.Health)
+                && R.IsReady() && Config.SubMenu("Combo").Item("UseRCombo").GetValue<bool>() && (R.LastCastAttemptT + Config.SubMenu("Combo").Item("Rdelay").GetValue<Slider>().Value) <= Environment.TickCount)
             {
                 R.Cast(Target, packetCast);
+                R.LastCastAttemptT = Environment.TickCount;
             }
 
             if (Config.SubMenu("Combo").Item("UseECombo").GetValue<bool>())
@@ -256,7 +348,7 @@ namespace AkaliShadow
                 if (useQ && Q.IsReady())
                 {
                     //Q kill him or Q+Proc kill him.
-                    if (!laneClear && (minion.Health <= Q.GetDamage(minion)  || (minion.Health <= (Q.GetDamage(minion) + Q.GetDamage(minion, 1)) && (minion.Health > Q.GetDamage(minion)) && myHero.Distance(minion) <= Orbwalking.GetRealAutoAttackRange(myHero)))
+                    if (!laneClear && (minion.Health <= Q.GetDamage(minion) || (minion.Health <= (Q.GetDamage(minion) + Q.GetDamage(minion, 1)) && (minion.Health > Q.GetDamage(minion)) && myHero.Distance(minion) <= Orbwalking.GetRealAutoAttackRange(myHero)))
                         || laneClear)
                     {
                         Q.Cast(minion, packetCast);
@@ -272,11 +364,9 @@ namespace AkaliShadow
                             E.Cast(packetCast);
             }
         }
+        #endregion
 
-        /******************************************
-         *  Utility stuff
-         ******************************************/
-
+        #region Utilities
         private static double CalcItemsDmg(Obj_AI_Hero Target)
         {
             double result = 0d;
@@ -399,10 +489,10 @@ namespace AkaliShadow
             {
                 var assassinRange = targetSelectorMenu.Item("AssassinSearchRange").GetValue<Slider>().Value;
                 var vEnemy = ObjectManager.Get<Obj_AI_Hero>().Where(
-                enemy => enemy.Team != ObjectManager.Player.Team 
-                      && !enemy.IsDead && enemy.IsVisible 
-                      && targetSelectorMenu.Item("Assassin" + enemy.ChampionName) != null 
-                      && targetSelectorMenu.Item("Assassin" + enemy.ChampionName).GetValue<bool>() 
+                enemy => enemy.Team != ObjectManager.Player.Team
+                      && !enemy.IsDead && enemy.IsVisible
+                      && targetSelectorMenu.Item("Assassin" + enemy.ChampionName) != null
+                      && targetSelectorMenu.Item("Assassin" + enemy.ChampionName).GetValue<bool>()
                       && ObjectManager.Player.Distance(enemy.ServerPosition) < assassinRange);
 
                 if (targetSelectorMenu.Item("AssassinSelectOption").GetValue<StringList>().SelectedIndex == 1)
@@ -414,5 +504,25 @@ namespace AkaliShadow
                 return t;
             }
         }
+
+        private static void InitializeWardSpots()
+        {
+            _WardSpots = new List<Vector3>();
+            _WardSpots.Add(new Vector3(7451.664f, 6538.447f, 33.74536f));
+            _WardSpots.Add(new Vector3(8518.179f, 7240.318f, 40.60852f));
+            _WardSpots.Add(new Vector3(8845.78f, 5213.672f, 33.61487f));
+            _WardSpots.Add(new Vector3(11504.19f, 5433.52f, 30.58154f));
+            _WardSpots.Add(new Vector3(11771.57f, 6313.124f, 51.80713f));
+            _WardSpots.Add(new Vector3(12778.93f, 2197.325f, 51.68604f));
+            _WardSpots.Add(new Vector3(7475.538f, 3373.856f, 52.57471f));
+            _WardSpots.Add(new Vector3(3373.385f, 7560.835f, 50.81982f));
+            _WardSpots.Add(new Vector3(1672.145f, 12495.21f, 52.83826f));
+            _WardSpots.Add(new Vector3(2200.103f, 12940.9f, 52.83813f));
+            _WardSpots.Add(new Vector3(4835.833f, 12076.87f, 56.44629f));
+            _WardSpots.Add(new Vector3(7368.242f, 11604.35f, 51.2417f));
+            _WardSpots.Add(new Vector3(7337.794f, 8310.077f, 14.54712f));
+            _WardSpots.Add(new Vector3(6377.225f, 7541.464f, -28.97229f));
+        }
+        #endregion
     }
 }
