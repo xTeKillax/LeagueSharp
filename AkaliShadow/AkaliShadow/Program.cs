@@ -22,6 +22,12 @@ namespace AkaliShadow
         public const string ChampionName = "Akali";
         private static Obj_AI_Hero myHero = ObjectManager.Player;
 
+        private static AutoLevel autoLevel = new AutoLevel(new[] {
+        SpellSlot.Q, SpellSlot.W, SpellSlot.Q, SpellSlot.E, SpellSlot.Q, 
+        SpellSlot.R, SpellSlot.Q, SpellSlot.E, SpellSlot.Q, SpellSlot.E, 
+        SpellSlot.R, SpellSlot.E, SpellSlot.E, SpellSlot.W, SpellSlot.W,
+        SpellSlot.R, SpellSlot.W, SpellSlot.W});
+
         private static Spell Q, W, E, R;
         private static SpellSlot IgniteSlot;
         private static List<Spell> SpellList;
@@ -111,6 +117,7 @@ namespace AkaliShadow
             Config.AddSubMenu(new Menu("Misc", "Misc"));
             Config.SubMenu("Misc").AddItem(new MenuItem("wSpotActive", "W perfect spot (press once and left click)").SetValue(
             new KeyBind("W".ToCharArray()[0], KeyBindType.Press)));
+            //Config.SubMenu("Misc").AddItem(new MenuItem("autoLvlUp", "Auto level up skills").SetValue(true));
 
             Utility.HpBarDamageIndicator.DamageToUnit = getComboDamage;
             Utility.HpBarDamageIndicator.Enabled = fullComboDamageItem.GetValue<bool>();
@@ -237,7 +244,7 @@ namespace AkaliShadow
 
             if(wCountdown)
             {
-                int remainingTime = 9 - ((Environment.TickCount - wTick) / 1000);
+                int remainingTime = 8 - ((Environment.TickCount - wTick) / 1000);
                 if (remainingTime > 0)
                 {
                     Vector2 drawPos = Drawing.WorldToScreen(myHero.Position);
