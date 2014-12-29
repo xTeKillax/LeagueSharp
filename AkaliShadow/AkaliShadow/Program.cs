@@ -22,12 +22,6 @@ namespace AkaliShadow
         public const string ChampionName = "Akali";
         private static Obj_AI_Hero myHero = ObjectManager.Player;
 
-        private static AutoLevel autoLevel = new AutoLevel(new[] {
-        SpellSlot.Q, SpellSlot.W, SpellSlot.Q, SpellSlot.E, SpellSlot.Q, 
-        SpellSlot.R, SpellSlot.Q, SpellSlot.E, SpellSlot.Q, SpellSlot.E, 
-        SpellSlot.R, SpellSlot.E, SpellSlot.E, SpellSlot.W, SpellSlot.W,
-        SpellSlot.R, SpellSlot.W, SpellSlot.W});
-
         private static Spell Q, W, E, R;
         private static SpellSlot IgniteSlot;
         private static List<Spell> SpellList;
@@ -81,30 +75,33 @@ namespace AkaliShadow
             TargetSelector.AddToMenu(targetSelectorMenu);
             Config.AddSubMenu(targetSelectorMenu);
 
-            //Orbwalker submenu
+            //[Orbwalker]
             Config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
             Orbwalker = new Orbwalking.Orbwalker(Config.SubMenu("Orbwalking"));
 
+            //[Combo]
             Config.AddSubMenu(new Menu("Combo", "Combo"));
             Config.SubMenu("Combo").AddItem(new MenuItem("UseQCombo", "Use Q").SetValue(true));
             Config.SubMenu("Combo").AddItem(new MenuItem("UseECombo", "Use E").SetValue(true));
             Config.SubMenu("Combo").AddItem(new MenuItem("UseRCombo", "Use R").SetValue(true));
             Config.SubMenu("Combo").AddItem(new MenuItem("Rdelay", "Delay Between R").SetValue(new Slider(0, 0, 2000)));
 
-
+            //[Harass]
             Config.AddSubMenu(new Menu("Harass", "Harass"));
             Config.SubMenu("Harass").AddItem(new MenuItem("UseQHarass", "Use Q").SetValue(false));
             Config.SubMenu("Harass").AddItem(new MenuItem("UseEHarass", "Use E").SetValue(true));
             Config.SubMenu("Harass").AddItem(new MenuItem("HarassActive", "Harass!").SetValue(
-            new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
+            new KeyBind('T', KeyBindType.Press)));
             Config.SubMenu("Harass").AddItem(new MenuItem("HarassActiveT", "Harass (toggle)!").SetValue(
-            new KeyBind("Y".ToCharArray()[0], KeyBindType.Toggle)));
+            new KeyBind('Y', KeyBindType.Toggle)));
 
+            //[Farm]
             Config.AddSubMenu(new Menu("Farm", "Farm"));
             Config.SubMenu("Farm").AddItem(new MenuItem("UseQFarm", "Use Q").SetValue(new StringList(new[] { "Freeze", "LaneClear", "Both", "No" }, 2)));
             Config.SubMenu("Farm").AddItem(new MenuItem("UseEFarm", "Use E").SetValue(new StringList(new[] { "Freeze", "LaneClear", "Both", "No" }, 1)));
             Config.SubMenu("Farm").AddItem(new MenuItem("hitCounter", "Use E if will hit min").SetValue(new Slider(3, 1, 6)));
 
+            //[Drawings]
             Config.AddSubMenu(new Menu("Drawings", "Drawing"));
             Config.SubMenu("Drawing").AddItem(new MenuItem("Qrange", "Q Range").SetValue(new Circle(true, Color.FromArgb(255, Color.SkyBlue))));
             Config.SubMenu("Drawing").AddItem(new MenuItem("Wrange", "W Range").SetValue(new Circle(false, Color.FromArgb(150, Color.IndianRed))));
@@ -114,10 +111,23 @@ namespace AkaliShadow
             MenuItem fullComboDamageItem = Config.SubMenu("Drawing").AddItem(new MenuItem("FullComboDraw", "Draw fullCombo damage").SetValue(true));
             Config.SubMenu("Drawing").AddItem(new MenuItem("wCountdown", "Draw W countdown").SetValue(true));
 
+            //[Misc]
             Config.AddSubMenu(new Menu("Misc", "Misc"));
             Config.SubMenu("Misc").AddItem(new MenuItem("wSpotActive", "W perfect spot (press once and left click)").SetValue(
-            new KeyBind("W".ToCharArray()[0], KeyBindType.Press)));
-            //Config.SubMenu("Misc").AddItem(new MenuItem("autoLvlUp", "Auto level up skills").SetValue(true));
+            new KeyBind('W', KeyBindType.Press)));
+            Config.SubMenu("Misc").AddItem(new MenuItem("autoLvlUp", "Auto level up skills").SetValue(true));
+
+
+            if (Config.SubMenu("Misc").Item("autoLvlUp").GetValue<bool>())
+            {
+                AutoLevel AL_sequence = new AutoLevel(new[] { 1, 2, 1, 3, 1, 4, 1, 3, 1, 3, 4, 3, 3, 2, 2, 4, 2, 2 });
+            }
+
+            Config.SubMenu("Misc").Item("autoLvlUp").ValueChanged +=
+            delegate(object sender, OnValueChangeEventArgs eventArgs)
+            {
+                AutoLevel.Enabled(Config.SubMenu("Misc").Item("autoLvlUp").GetValue<bool>());
+            };
 
             Utility.HpBarDamageIndicator.DamageToUnit = getComboDamage;
             Utility.HpBarDamageIndicator.Enabled = fullComboDamageItem.GetValue<bool>();
