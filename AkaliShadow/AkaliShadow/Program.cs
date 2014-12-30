@@ -12,7 +12,7 @@ using Color = System.Drawing.Color;
 
 
 
-//Credits: Esk0r, princer007, xQx, jackisback
+//Credits: Esk0r, princer007, xQx, jackisback, WorstPing
 
 namespace AkaliShadow
 {
@@ -115,19 +115,18 @@ namespace AkaliShadow
             Config.AddSubMenu(new Menu("Misc", "Misc"));
             Config.SubMenu("Misc").AddItem(new MenuItem("wSpotActive", "W perfect spot (press once and left click)").SetValue(
             new KeyBind('W', KeyBindType.Press)));
-            Config.SubMenu("Misc").AddItem(new MenuItem("autoLvlUp", "Auto level up skills").SetValue(true));
-
+            /*Config.SubMenu("Misc").AddItem(new MenuItem("autoLvlUp", "Auto level up skills").SetValue(true));
+            Config.SubMenu("Misc").AddItem(new MenuItem("antiGapCloser", "Use W on gapcloser")).SetValue(new StringList(new[] { "Targeted only", "Skillshot only", "Both", "No" }, 1));
 
             if (Config.SubMenu("Misc").Item("autoLvlUp").GetValue<bool>())
             {
-                AutoLevel AL_sequence = new AutoLevel(new[] { 1, 2, 1, 3, 1, 4, 1, 3, 1, 3, 4, 3, 3, 2, 2, 4, 2, 2 });
+                var level = new AutoLevel(new[] { 1, 2, 1, 3, 1, 4, 1, 3, 1, 3, 4, 3, 3, 2, 2, 4, 2, 2 });
             }
-
             Config.SubMenu("Misc").Item("autoLvlUp").ValueChanged +=
             delegate(object sender, OnValueChangeEventArgs eventArgs)
             {
-                AutoLevel.Enabled(Config.SubMenu("Misc").Item("autoLvlUp").GetValue<bool>());
-            };
+                AutoLevel.Enabled(eventArgs.GetNewValue<bool>());
+            };*/
 
             Utility.HpBarDamageIndicator.DamageToUnit = getComboDamage;
             Utility.HpBarDamageIndicator.Enabled = fullComboDamageItem.GetValue<bool>();
@@ -149,10 +148,35 @@ namespace AkaliShadow
             Obj_AI_Base.OnProcessSpellCast += OnProcessSpellCast;
             GameObject.OnCreate += OnCreateObj;
             Drawing.OnDraw += OnDraw;
+            //AntiGapcloser.OnEnemyGapcloser += AntiGapcloser_OnEnemyGapcloser;
 
             //debug_output = new System.IO.StreamWriter("c:\\AkaliShadow.log");
             Game.PrintChat("<font color = \"#6B9FE3\">Akali Shadow</font><font color = \"#E3AF6B\"> by BestAkaliAfrica</font>. You like ? Buy a coffee to Joduskame or me :p");
         }
+
+        private static void AntiGapcloser_OnEnemyGapcloser(ActiveGapcloser gapcloser)
+        {
+            //0=targeted 1=skillshot 2=both 4=no
+            var gapcloserType = Config.SubMenu("Misc").Item("antiGapCloser").GetValue<StringList>().SelectedIndex;
+
+            Game.PrintChat(gapcloser.Sender.Name);
+
+            if (gapcloserType == 4)
+                return;
+
+            if (!W.IsReady())
+                return;
+
+            Game.PrintChat("Gonna cast shroud!");
+
+            if ((gapcloser.SkillType == GapcloserType.Targeted && gapcloserType == 0 || gapcloserType == 2) || (gapcloser.SkillType == GapcloserType.Skillshot && gapcloserType == 1) || gapcloserType == 2)
+            {
+                W.Cast(myHero, packetCast);
+                Game.PrintChat("Casted shroud!");
+            }
+        }
+
+
         
         private static void OnUpdate(EventArgs args)
         {
@@ -179,7 +203,6 @@ namespace AkaliShadow
                 Harass();
             }
         }
-
 
         private static void OnWndProc(WndEventArgs args)
         {
