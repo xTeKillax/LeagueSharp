@@ -1,0 +1,14 @@
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\MapPosition.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\MapPosition.pdb
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\obj\Debug\MapPosition.csprojResolveAssemblyReference.cache
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\obj\Debug\MapPosition.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\obj\Debug\MapPosition.pdb
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\LeagueSharp.Common.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\LeagueSharp.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\SharpDX.Direct3D9.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\SharpDX.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\SharpDX.Toolkit.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\SharpDX.Toolkit.Graphics.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\LeagueSharp.xml
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\SharpDX.Toolkit.xml
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\MapPosition\MapPosition\bin\Debug\SharpDX.Toolkit.Graphics.xml

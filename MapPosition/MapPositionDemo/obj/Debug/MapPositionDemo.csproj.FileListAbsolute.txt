@@ -1,0 +1,16 @@
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\MapPositionDemo.exe.config
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\MapPositionDemo.exe
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\MapPositionDemo.pdb
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\LeagueSharp.Common.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\LeagueSharp.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\MapPosition.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\SharpDX.Direct3D9.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\SharpDX.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\SharpDX.Toolkit.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\SharpDX.Toolkit.Graphics.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\LeagueSharp.xml
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\SharpDX.Toolkit.xml
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\bin\Release\SharpDX.Toolkit.Graphics.xml
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\obj\Debug\MapPositionDemo.csprojResolveAssemblyReference.cache
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\obj\Debug\MapPositionDemo.exe
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\obj\Debug\MapPositionDemo.pdb
