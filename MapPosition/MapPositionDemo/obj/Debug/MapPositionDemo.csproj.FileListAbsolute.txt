@@ -14,3 +14,6 @@ C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositi
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\obj\Debug\MapPositionDemo.csprojResolveAssemblyReference.cache
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\obj\Debug\MapPositionDemo.exe
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\LocalAssemblies\MapPositionDemoC4A160\obj\Debug\MapPositionDemo.pdb
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\MapPosition\MapPositionDemo\bin\Release\MapPositionDemo.exe.config
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\MapPosition\MapPositionDemo\obj\Debug\MapPositionDemo.exe
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\MapPosition\MapPositionDemo\obj\Debug\MapPositionDemo.pdb
