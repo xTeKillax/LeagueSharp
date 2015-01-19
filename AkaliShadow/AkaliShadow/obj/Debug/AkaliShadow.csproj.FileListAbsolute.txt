@@ -3,10 +3,11 @@ C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShad
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\AkaliShadow.pdb
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\LeagueSharp.Common.dll
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\LeagueSharp.dll
-C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\SharpDX.dll
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\SharpDX.Direct3D9.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\SharpDX.dll
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\SharpDX.Toolkit.dll
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\SharpDX.Toolkit.Graphics.dll
+C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\clipper_library.dll
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\LeagueSharp.xml
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\SharpDX.Toolkit.xml
 C:\Users\TeKilla\Desktop\League of Legends\LeagueSharp\Dev\LeagueSharp\AkaliShadow\AkaliShadow\bin\Release\SharpDX.Toolkit.Graphics.xml

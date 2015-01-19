@@ -4,15 +4,11 @@ using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-
 using Color = System.Drawing.Color;
 
 
 
-//Credits: Esk0r, princer007, xQx, jackisback, WorstPing
+//Credits: Esk0r, princer007, xQx, jackisback, WorstPing, InjectionDev
 
 namespace AkaliShadow
 {
@@ -20,26 +16,26 @@ namespace AkaliShadow
     {
         #region Variables
         public const string ChampionName = "Akali";
-        private static Obj_AI_Hero myHero = ObjectManager.Player;
+        private static readonly Obj_AI_Hero MyHero = ObjectManager.Player;
 
-        private static Spell Q, W, E, R;
-        private static SpellSlot IgniteSlot;
-        private static List<Spell> SpellList;
-        private static Items.Item Hex, Dfg, BwC;
+        private static Spell _q, _w, _e, _r;
+        private static List<Spell> _spellList;
+        private static Items.Item _hex, _dfg, _bwC;
 
 
         public static Orbwalking.Orbwalker Orbwalker;
         public static Menu Config;
-        public static Menu targetSelectorMenu;
+        public static Menu TargetSelectorMenu;
+        public static LevelUpManager LevelUpManager;
 
-        private static bool packetCast = false;
-        private static bool qInAir = true;
-        private static bool wCountdown = false;
-        private static bool drawWspots = false;
-        private static List<Vector3> _WardSpots;
-        private const int SPOT_MAGNET_RADIUS = 125;
-        private static int wTick = 0;
-        private static Render.Text wCountdownText;
+        private const bool PacketCast = false;
+        private static bool _qInAir = true;
+        private static bool _wCountdown;
+        private static bool _drawWspots;
+        private static List<Vector3> _wardSpots;
+        private const int SpotMagnetRadius = 125;
+        private static int _wTick;
+        private static Render.Text _wCountdownText;
 
         //private static System.IO.StreamWriter debug_output;
         #endregion
@@ -52,28 +48,30 @@ namespace AkaliShadow
 
         private static void Game_OnGameLoad(EventArgs args)
         {
-            if (myHero.ChampionName != ChampionName) return;
+            if (MyHero.ChampionName != ChampionName) return;
 
-            Q = new Spell(SpellSlot.Q, 600);
-            W = new Spell(SpellSlot.W, 700);
-            E = new Spell(SpellSlot.E, 325);
-            R = new Spell(SpellSlot.R, 800);
+            _q = new Spell(SpellSlot.Q, 600);
+            _w = new Spell(SpellSlot.W, 700);
+            _e = new Spell(SpellSlot.E, 325);
+            _r = new Spell(SpellSlot.R, 800);
 
-            Hex = new Items.Item(3146, 700);
-            Dfg = new Items.Item(3128, 750);
-            BwC = new Items.Item(3144, 450);
+            _hex = new Items.Item(3146, 700);
+            _dfg = new Items.Item(3128, 750);
+            _bwC = new Items.Item(3144, 450);
 
-            IgniteSlot = myHero.GetSpellSlot("SummonerDot");
+            MyHero.GetSpellSlot("SummonerDot");
 
-            SpellList = new List<Spell>() { Q, W, E, R };
+            _spellList = new List<Spell>() { _q, _w, _e, _r };
 
-            wCountdownText = new Render.Text("", new Vector2(0, 0), 25, SharpDX.Color.LightYellow, "Impact");
+            _wCountdownText = new Render.Text("", new Vector2(0, 0), 25, SharpDX.Color.LightYellow, "Impact");
+
+            InitializeLevelUpManager();
 
             (Config = new Menu("Akali Shadow", ChampionName, true)).AddToMainMenu();
 
-            targetSelectorMenu = new Menu("Target Selector", "Target Selector");
-            TargetSelector.AddToMenu(targetSelectorMenu);
-            Config.AddSubMenu(targetSelectorMenu);
+            TargetSelectorMenu = new Menu("Target Selector", "Target Selector");
+            TargetSelector.AddToMenu(TargetSelectorMenu);
+            Config.AddSubMenu(TargetSelectorMenu);
 
             //[Orbwalker]
             Config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
@@ -112,23 +110,14 @@ namespace AkaliShadow
             Config.SubMenu("Drawing").AddItem(new MenuItem("wCountdown", "Draw W countdown").SetValue(true));
 
             //[Misc]
-            Config.AddSubMenu(new Menu("Misc", "Misc"));
+            Menu menu_misc = Config.AddSubMenu(new Menu("Misc", "Misc"));
+            LevelUpManager.AddToMenu(ref menu_misc);
             Config.SubMenu("Misc").AddItem(new MenuItem("wSpotActive", "W perfect spot (press once and left click)").SetValue(
             new KeyBind('W', KeyBindType.Press)));
-            /*Config.SubMenu("Misc").AddItem(new MenuItem("autoLvlUp", "Auto level up skills").SetValue(true));
-            Config.SubMenu("Misc").AddItem(new MenuItem("antiGapCloser", "Use W on gapcloser")).SetValue(new StringList(new[] { "Targeted only", "Skillshot only", "Both", "No" }, 1));
+            Config.SubMenu("Misc").AddItem(new MenuItem("antiGapCloser", "Use W on gapcloser")).SetValue(new StringList(new[] { "Targeted only", "Skillshot only", "Both", "Off" }, 1));
+            Config.SubMenu("Misc").AddItem(new MenuItem("flee", "Auto flee")).SetValue(new KeyBind('H', KeyBindType.Press));
 
-            if (Config.SubMenu("Misc").Item("autoLvlUp").GetValue<bool>())
-            {
-                var level = new AutoLevel(new[] { 1, 2, 1, 3, 1, 4, 1, 3, 1, 3, 4, 3, 3, 2, 2, 4, 2, 2 });
-            }
-            Config.SubMenu("Misc").Item("autoLvlUp").ValueChanged +=
-            delegate(object sender, OnValueChangeEventArgs eventArgs)
-            {
-                AutoLevel.Enabled(eventArgs.GetNewValue<bool>());
-            };*/
-
-            Utility.HpBarDamageIndicator.DamageToUnit = getComboDamage;
+            Utility.HpBarDamageIndicator.DamageToUnit = GetComboDamage;
             Utility.HpBarDamageIndicator.Enabled = fullComboDamageItem.GetValue<bool>();
             fullComboDamageItem.ValueChanged +=
             delegate(object sender, OnValueChangeEventArgs eventArgs)
@@ -140,7 +129,7 @@ namespace AkaliShadow
             Orbwalker.SetAttack(true);
             Orbwalker.SetMovement(true);
 
-            InitializeWardSpots();
+            InitializeEvadeSpots();
 
             //Game event callback
             Game.OnGameUpdate += OnUpdate;
@@ -148,7 +137,7 @@ namespace AkaliShadow
             Obj_AI_Base.OnProcessSpellCast += OnProcessSpellCast;
             GameObject.OnCreate += OnCreateObj;
             Drawing.OnDraw += OnDraw;
-            //AntiGapcloser.OnEnemyGapcloser += AntiGapcloser_OnEnemyGapcloser;
+            AntiGapcloser.OnEnemyGapcloser += AntiGapcloser_OnEnemyGapcloser;
 
             //debug_output = new System.IO.StreamWriter("c:\\AkaliShadow.log");
             Game.PrintChat("<font color = \"#6B9FE3\">Akali Shadow</font><font color = \"#E3AF6B\"> by BestAkaliAfrica</font>. You like ? Buy a coffee to Joduskame or me :p");
@@ -159,21 +148,14 @@ namespace AkaliShadow
             //0=targeted 1=skillshot 2=both 4=no
             var gapcloserType = Config.SubMenu("Misc").Item("antiGapCloser").GetValue<StringList>().SelectedIndex;
 
-            Game.PrintChat(gapcloser.Sender.Name);
-
             if (gapcloserType == 4)
                 return;
 
-            if (!W.IsReady())
+            if (!_w.IsReady())
                 return;
 
-            Game.PrintChat("Gonna cast shroud!");
-
-            if ((gapcloser.SkillType == GapcloserType.Targeted && gapcloserType == 0 || gapcloserType == 2) || (gapcloser.SkillType == GapcloserType.Skillshot && gapcloserType == 1) || gapcloserType == 2)
-            {
-                W.Cast(myHero, packetCast);
-                Game.PrintChat("Casted shroud!");
-            }
+            if ((gapcloser.SkillType == GapcloserType.Targeted && gapcloserType == 0 || gapcloserType == 2) || ((gapcloser.SkillType == GapcloserType.Skillshot && gapcloserType == 1) || gapcloserType == 2 && (MyHero.Position.Distance(gapcloser.End)) <= 600))
+                _w.Cast(MyHero, PacketCast);
         }
 
 
@@ -183,9 +165,9 @@ namespace AkaliShadow
             switch (Orbwalker.ActiveMode)
             {
                 case Orbwalking.OrbwalkingMode.Combo:
-                    var Target = GetEnemy;
-                    if (Target != null)
-                        Combo(Target);
+                    var target = GetEnemy;
+                    if (target != null)
+                        Combo(target);
                     break;
 
                 case Orbwalking.OrbwalkingMode.Mixed:
@@ -196,12 +178,14 @@ namespace AkaliShadow
                     Farm(true);
                     break;
             }
-
-            if (Config.SubMenu("Harass").Item("HarassActive").GetValue<KeyBind>().Active
-                || Config.SubMenu("Harass").Item("HarassActiveT").GetValue<bool>())
-            {
+            
+            if (Config.SubMenu("Harass").Item("HarassActive").GetValue<KeyBind>().Active || Config.SubMenu("Harass").Item("HarassActiveT").GetValue<KeyBind>().Active)
                 Harass();
-            }
+
+            if (Config.SubMenu("Misc").Item("flee").GetValue<KeyBind>().Active) 
+                Flee();
+
+            LevelUpManager.Update();
         }
 
         private static void OnWndProc(WndEventArgs args)
@@ -211,7 +195,7 @@ namespace AkaliShadow
             {
                 //is the key for wSpotActive ?
                 if (args.WParam == Config.SubMenu("Misc").Item("wSpotActive").GetValue<KeyBind>().Key)
-                    drawWspots = true;
+                    _drawWspots = true;
 
 
                 //if (args.WParam == 0x60) //numpad 0
@@ -223,28 +207,28 @@ namespace AkaliShadow
                 //if (args.WParam == 0x61) //numpad 1
                 //    debug_output.Close();
             }
-            else if (args.Msg == (uint)WindowsMessages.WM_LBUTTONDOWN && drawWspots)
+            else if (args.Msg == (uint)WindowsMessages.WM_LBUTTONDOWN && _drawWspots)
             {
-                drawWspots = false;
+                _drawWspots = false;
 
-                foreach (Vector3 safeSpot in _WardSpots)
-                    if (safeSpot.Distance(Game.CursorPos) <= SPOT_MAGNET_RADIUS)
-                        W.Cast(safeSpot);
+                foreach (Vector3 safeSpot in _wardSpots)
+                    if (safeSpot.Distance(Game.CursorPos) <= SpotMagnetRadius)
+                        _w.Cast(safeSpot);
             }
-            else if ((args.Msg == (uint)WindowsMessages.WM_LBUTTONUP || args.Msg == (uint)WindowsMessages.WM_RBUTTONDOWN) && drawWspots)
-                drawWspots = false;
+            else if ((args.Msg == (uint)WindowsMessages.WM_LBUTTONUP || args.Msg == (uint)WindowsMessages.WM_RBUTTONDOWN) && _drawWspots)
+                _drawWspots = false;
         }
 
         private static void OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             if (Config.SubMenu("Drawing").Item("wCountdown").GetValue<bool>())
             {
-                if (sender.Type == GameObjectType.obj_AI_Hero && sender.NetworkId == myHero.NetworkId)
+                if (sender.Type == GameObjectType.obj_AI_Hero && sender.NetworkId == MyHero.NetworkId)
                 {
                     if (args.SData.Name.Equals("AkaliSmokeBomb"))
                     {
-                        wCountdown = true;
-                        wTick = Environment.TickCount;
+                        _wCountdown = true;
+                        _wTick = Environment.TickCount;
                     }
                 }
             }
@@ -254,124 +238,123 @@ namespace AkaliShadow
         {
             //Detect whenever our Q land on someone
             if (sender.Name.Contains("akali_markOftheAssasin_marker_tar.troy") && !sender.IsEnemy )
-                qInAir = false;
+                _qInAir = false;
         }
         #endregion
 
         #region Graphics
         private static void OnDraw(EventArgs args)
         {
-            foreach (var spell in SpellList)
+            foreach (var spell in _spellList)
             {
                 var menuItem = Config.SubMenu("Drawing").Item(spell.Slot + "range").GetValue<Circle>();
                 if (menuItem.Active)
-                    Utility.DrawCircle(myHero.Position, spell.Range, menuItem.Color);
+                    Render.Circle.DrawCircle(MyHero.Position, spell.Range, menuItem.Color);
             }
 
-            if (drawWspots)
+            if (_drawWspots)
             {
-                foreach (Vector3 safeSpot in _WardSpots)
+                foreach (Vector3 safeSpot in _wardSpots)
                     if(Render.OnScreen(Drawing.WorldToScreen(safeSpot)))
-                        Utility.DrawCircle(safeSpot, SPOT_MAGNET_RADIUS, Config.SubMenu("Drawing").Item("spotColor").GetValue<Circle>().Color);
+                        Render.Circle.DrawCircle(safeSpot, SpotMagnetRadius, Config.SubMenu("Drawing").Item("spotColor").GetValue<Circle>().Color);
             }
 
-            if(wCountdown)
+            if(_wCountdown)
             {
-                int remainingTime = 8 - ((Environment.TickCount - wTick) / 1000);
+                int remainingTime = 8 - ((Environment.TickCount - _wTick) / 1000);
                 if (remainingTime > 0)
                 {
-                    Vector2 drawPos = Drawing.WorldToScreen(myHero.Position);
-                    wCountdownText.X = (int)drawPos.X;
-                    wCountdownText.Y = (int)drawPos.Y - 20;
-                    wCountdownText.text = remainingTime.ToString();
-                    wCountdownText.OnEndScene();
+                    Vector2 drawPos = Drawing.WorldToScreen(MyHero.Position);
+                    _wCountdownText.X = (int)drawPos.X;
+                    _wCountdownText.Y = (int)drawPos.Y - 20;
+                    _wCountdownText.text = remainingTime.ToString();
+                    _wCountdownText.OnEndScene();
                 }
                 else
-                    wCountdown = false;
+                    _wCountdown = false;
             }
         }
         #endregion
 
         #region Mechanics
-        private static void Combo(Obj_AI_Hero Target)
+        private static void Combo(Obj_AI_Hero target)
         {
-            //var Target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
-            double eDamage = Damage.GetSpellDamage(myHero, Target, SpellSlot.E);
+            double eDamage = MyHero.GetSpellDamage(target, SpellSlot.E);
 
-            CastItems(Target);
+            CastItems(target);
 
             //Mark Q on enemy if not marked
-            if (Q.IsReady() && Target != null && myHero.Distance(Target) <= Q.Range && !HasBuff(Target, "AkaliMota") && Config.SubMenu("Combo").Item("UseQCombo").GetValue<bool>())
+            if (_q.IsReady() && target != null && MyHero.Distance(target) <= _q.Range && !HasBuff(target, "AkaliMota") && Config.SubMenu("Combo").Item("UseQCombo").GetValue<bool>())
             {
-                Q.Cast(Target, packetCast);
-                qInAir = true;
+                _q.Cast(target, PacketCast);
+                _qInAir = true;
             }
 
             //Jump with R if dist > E.Range and have enough energy for R+E
-            if (myHero.Distance(Target) <= R.Range
-                && ((myHero.Distance(Target) > E.Range && (HasEnergyFor(false, true, false, true) || HasBuff(Target, "AkaliMota")))
-                || (Damage.GetSpellDamage(myHero, Target, SpellSlot.R) + myHero.GetAutoAttackDamage(Target, true)) >= Target.Health)
-                && R.IsReady() && Config.SubMenu("Combo").Item("UseRCombo").GetValue<bool>() && (R.LastCastAttemptT + Config.SubMenu("Combo").Item("Rdelay").GetValue<Slider>().Value) <= Environment.TickCount)
+            if (MyHero.Distance(target) <= _r.Range
+                && ((MyHero.Distance(target) > _e.Range && (HasEnergyFor(false, true, false, true) || HasBuff(target, "AkaliMota")))
+                || (MyHero.GetSpellDamage(target, SpellSlot.R) + MyHero.GetAutoAttackDamage(target, true)) >= target.Health)
+                && _r.IsReady() && Config.SubMenu("Combo").Item("UseRCombo").GetValue<bool>() && (_r.LastCastAttemptT + Config.SubMenu("Combo").Item("Rdelay").GetValue<Slider>().Value) <= Environment.TickCount)
             {
-                R.Cast(Target, packetCast);
-                R.LastCastAttemptT = Environment.TickCount;
+                _r.Cast(target, PacketCast);
+                _r.LastCastAttemptT = Environment.TickCount;
             }
 
             if (Config.SubMenu("Combo").Item("UseECombo").GetValue<bool>())
             {
                 //Enemy got mark and we have energy to Q+E.
-                if (myHero.Distance(Target) <= E.Range
-                    && HasBuff(Target, "AkaliMota")
+                if (MyHero.Distance(target) <= _e.Range
+                    && HasBuff(target, "AkaliMota")
                     && HasEnergyFor(true, false, true, false)
-                    && E.IsReady())
+                    && _e.IsReady())
                 {
-                    E.Cast(packetCast);
+                    _e.Cast(PacketCast);
                 }
 
                 //We can kill him with E, w/ or w/o mark/Qenergy
-                if (myHero.Distance(Target) <= E.Range
-                    && Target.Health <= eDamage
-                    && E.IsReady())
+                if (MyHero.Distance(target) <= _e.Range
+                    && target.Health <= eDamage
+                    && _e.IsReady())
                 {
-                    E.Cast(packetCast);
+                    _e.Cast(PacketCast);
                 }
 
                 //We mark the proc with E and in 2-3 sec we will have enough energy to do Q again.
-                if (myHero.Distance(Target) <= E.Range
-                    && HasBuff(Target, "AkaliMota")
+                if (MyHero.Distance(target) <= _e.Range
+                    && HasBuff(target, "AkaliMota")
                     && !HasEnergyFor(true, false, false, false)
-                    && E.IsReady())
+                    && _e.IsReady())
                 {
-                    E.Cast(packetCast);
+                    _e.Cast(PacketCast);
                 }
 
                 //No Q going to target, enough energy to do Q+E, we cast E
-                if (myHero.Distance(Target) <= E.Range
-                    && qInAir == false
+                if (MyHero.Distance(target) <= _e.Range
+                    && _qInAir == false
                     && HasEnergyFor(true, false, true, false)
-                    && E.IsReady())
+                    && _e.IsReady())
                 {
-                    E.Cast(packetCast);
+                    _e.Cast(PacketCast);
                 }
             }
         }
 
         private static void Harass()
         {
-            Obj_AI_Hero Target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            Obj_AI_Hero target = TargetSelector.GetTarget(_q.Range, TargetSelector.DamageType.Magical);
 
-            if (Target != null)
+            if (target != null)
             {
-                if (Q.IsReady() && myHero.Distance(Target) <= Q.Range && Config.SubMenu("Harass").Item("UseQHarass").GetValue<bool>())
+                if (_q.IsReady() && MyHero.Distance(target) <= _q.Range && Config.SubMenu("Harass").Item("UseQHarass").GetValue<bool>())
                 {
-                    Q.Cast(Target, packetCast);
-                    qInAir = true;
+                    _q.Cast(target, PacketCast);
+                    _qInAir = true;
                 }
 
-                if (E.IsReady() && myHero.Distance(Target) <= E.Range
-                    && (HasBuff(Target, "AkaliMota") || Damage.GetSpellDamage(myHero, Target, SpellSlot.E) >= Target.Health) && Config.SubMenu("Harass").Item("UseEHarass").GetValue<bool>())
+                if (_e.IsReady() && MyHero.Distance(target) <= _e.Range
+                    && (HasBuff(target, "AkaliMota") || MyHero.GetSpellDamage(target, SpellSlot.E) >= target.Health) && Config.SubMenu("Harass").Item("UseEHarass").GetValue<bool>())
                 {
-                    E.Cast(packetCast);
+                    _e.Cast(PacketCast);
                 }
             }
         }
@@ -383,115 +366,132 @@ namespace AkaliShadow
             var useQ = (laneClear && (useQi == 1 || useQi == 2)) || (!laneClear && (useQi == 0 || useQi == 2));
             var useE = (laneClear && (useEi == 1 || useEi == 2)) || (!laneClear && (useEi == 0 || useEi == 2));
 
-            foreach (Obj_AI_Base minion in MinionManager.GetMinions(myHero.Position, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health))
+            foreach (Obj_AI_Base minion in MinionManager.GetMinions(MyHero.Position, _q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health))
             {
-                if (useQ && Q.IsReady())
+                if (useQ && _q.IsReady())
                 {
                     //Q kill him or Q+Proc kill him.
-                    if (!laneClear && (minion.Health <= Q.GetDamage(minion) || (minion.Health <= (Q.GetDamage(minion) + Q.GetDamage(minion, 1)) && (minion.Health > Q.GetDamage(minion)) && myHero.Distance(minion) <= Orbwalking.GetRealAutoAttackRange(myHero)))
+                    if (!laneClear && (minion.Health <= _q.GetDamage(minion) || (minion.Health <= (_q.GetDamage(minion) + _q.GetDamage(minion, 1)) && (minion.Health > _q.GetDamage(minion)) && MyHero.Distance(minion) <= Orbwalking.GetRealAutoAttackRange(MyHero)))
                         || laneClear)
                     {
-                        Q.Cast(minion, packetCast);
+                        _q.Cast(minion, PacketCast);
                     }
 
-                    if (HasBuff(minion, "AkaliMota") && Orbwalking.GetRealAutoAttackRange(myHero) >= myHero.Distance(minion))
+                    if (HasBuff(minion, "AkaliMota") && Orbwalking.GetRealAutoAttackRange(MyHero) >= MyHero.Distance(minion))
                         Orbwalker.ForceTarget(minion);
                 }
 
-                if (useE && E.IsReady())
-                    if (myHero.Distance(minion) <= E.Range)
-                        if ((!laneClear && minion.Health <= E.GetDamage(minion)) || (laneClear && MinionManager.GetMinions(myHero.Position, E.Range, MinionTypes.All, MinionTeam.Enemy).Count >= Config.SubMenu("Farm").Item("hitCounter").GetValue<Slider>().Value))
-                            E.Cast(packetCast);
+                if (useE && _e.IsReady())
+                    if (MyHero.Distance(minion) <= _e.Range)
+                        if ((!laneClear && minion.Health <= _e.GetDamage(minion)) || (laneClear && MinionManager.GetMinions(MyHero.Position, _e.Range, MinionTypes.All, MinionTeam.Enemy).Count >= Config.SubMenu("Farm").Item("hitCounter").GetValue<Slider>().Value))
+                            _e.Cast(PacketCast);
+            }
+        }
+
+        static void Flee()
+        {
+            Vector2 escape_pos = MyHero.Position.Extend(Game.CursorPos, _r.Range).To2D();
+
+            MyHero.IssueOrder(GameObjectOrder.MoveTo, Game.CursorPos);
+
+            var creepNear = MinionManager.GetMinions(Game.CursorPos, 300, MinionTypes.All, MinionTeam.NotAlly);
+            if (creepNear.Count < 1)
+            {
+                if (!IsWall(escape_pos) && IsWallBetween(MyHero.Position, escape_pos.To3D()) && MyHero.Distance(Game.CursorPos) < _r.Range)
+                    if (_w.IsReady())
+                        _w.Cast(MyHero.Position.Extend(Game.CursorPos, _w.Range), PacketCast);
+            }
+            else
+            {
+                _r.CastOnUnit(creepNear.FirstOrDefault(), PacketCast);
             }
         }
         #endregion
 
         #region Utilities
-        private static double CalcItemsDmg(Obj_AI_Hero Target)
+        private static double CalcItemsDmg(Obj_AI_Hero target)
         {
             double result = 0d;
-            foreach (var item in myHero.InventoryItems)
+            foreach (var item in MyHero.InventoryItems)
                 switch ((int)item.Id)
                 {
                     case 3100: // LichBane
-                        if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
-                            result += myHero.BaseAttackDamage * 0.75 + myHero.FlatMagicDamageMod * 0.5;
+                        if (MyHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
+                            result += MyHero.BaseAttackDamage * 0.75 + MyHero.FlatMagicDamageMod * 0.5;
                         break;
                     case 3057: //Sheen
-                        if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
-                            result += myHero.BaseAttackDamage;
+                        if (MyHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
+                            result += MyHero.BaseAttackDamage;
                         break;
                     case 3144: //BwC
-                        if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
-                            result += myHero.GetItemDamage(Target, Damage.DamageItems.Bilgewater);
+                        if (MyHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
+                            result += MyHero.GetItemDamage(target, Damage.DamageItems.Bilgewater);
                         break;
                     case 3146:  //Hex
-                        if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
-                            result += myHero.GetItemDamage(Target, Damage.DamageItems.Hexgun);
+                        if (MyHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
+                            result += MyHero.GetItemDamage(target, Damage.DamageItems.Hexgun);
                         break;
                     case 3128:
-                        if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
-                            result += myHero.GetItemDamage(Target, Damage.DamageItems.Dfg);
+                        if (MyHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
+                            result += MyHero.GetItemDamage(target, Damage.DamageItems.Dfg);
                         break;
                 }
 
             return result;
         }
 
-        private static float getComboDamage(Obj_AI_Hero Target)
+        private static float GetComboDamage(Obj_AI_Hero target)
         {
-            double qDamage = Damage.GetSpellDamage(myHero, Target, SpellSlot.Q);
-            double q2Damage = Damage.GetSpellDamage(myHero, Target, SpellSlot.Q, 1);
-            double wDamage = Damage.GetSpellDamage(myHero, Target, SpellSlot.W);
-            double eDamage = Damage.GetSpellDamage(myHero, Target, SpellSlot.E);
-            double rDamage = Damage.GetSpellDamage(myHero, Target, SpellSlot.R);
-            double hitDamage = Damage.GetAutoAttackDamage(myHero, Target, true);
+            double qDamage = MyHero.GetSpellDamage(target, SpellSlot.Q);
+            double q2Damage = MyHero.GetSpellDamage(target, SpellSlot.Q, 1);
+            double eDamage = MyHero.GetSpellDamage(target, SpellSlot.E);
+            double rDamage = MyHero.GetSpellDamage(target, SpellSlot.R);
+            double hitDamage = MyHero.GetAutoAttackDamage(target, true);
 
             double totDmg = 0;
 
-            if (Q.IsReady())
+            if (_q.IsReady())
                 totDmg += qDamage;
 
-            if (HasBuff(Target, "AkaliMota"))
+            if (HasBuff(target, "AkaliMota"))
                 totDmg += q2Damage + hitDamage;
 
-            if (E.IsReady())
+            if (_e.IsReady())
                 totDmg += eDamage;
 
-            if (R.IsReady())
+            if (_r.IsReady())
                 totDmg += rDamage;
 
-            totDmg += CalcItemsDmg(Target);
+            totDmg += CalcItemsDmg(target);
 
             //Dfg damage
-            foreach (var item in myHero.InventoryItems)
-            {
-                if ((int)item.Id == 3128)
-                {
-                    if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready)
-                        totDmg *= 1.2;
-                }
-            }
-            if (HasBuff(Target, "deathfiregraspspell"))
+            totDmg = MyHero.InventoryItems.
+                Where(item => 
+                    (int) item.Id == 3128).
+                    Where(item => 
+                        MyHero.Spellbook.CanUseSpell((SpellSlot) item.Slot) == SpellState.Ready).
+                        Aggregate(totDmg, (current, item) => current * 1.2);
+
+            if (HasBuff(target, "deathfiregraspspell"))
                 totDmg *= 1.2;
 
             return (float)totDmg;
         }
 
-        private static void CastItems(Obj_AI_Hero Target)
+        private static void CastItems(Obj_AI_Hero target)
         {
-            foreach (var item in myHero.InventoryItems)
+            foreach (var item in MyHero.InventoryItems)
             {
                 switch ((int)item.Id)
                 {
                     case 3128: //DFG
-                        if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready) Dfg.Cast(Target);
+                        if (MyHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready) _dfg.Cast(target);
                         break;
                     case 3146: //HexTech
-                        if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready) Hex.Cast(Target);
+                        if (MyHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready) _hex.Cast(target);
                         break;
                     case 3144: //BwC
-                        if (myHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready) BwC.Cast(Target);
+                        if (MyHero.Spellbook.CanUseSpell((SpellSlot)item.Slot) == SpellState.Ready) _bwC.Cast(target);
                         break;
                 }
             }
@@ -499,25 +499,23 @@ namespace AkaliShadow
 
         static bool HasBuff(Obj_AI_Base target, string buffName)
         {
-            foreach (BuffInstance buff in target.Buffs)
-                if (buff.Name == buffName) return true;
-            return false;
+            return target.Buffs.Any(buff => buff.Name == buffName);
         }
 
-        static bool HasEnergyFor(bool Q, bool W, bool E, bool R)
+        static bool HasEnergyFor(bool q, bool w, bool e, bool r)
         {
             float totalCost = 0;
 
-            if (Q)
-                totalCost += myHero.Spellbook.GetSpell(SpellSlot.Q).ManaCost;
-            if (W)
-                totalCost += myHero.Spellbook.GetSpell(SpellSlot.W).ManaCost;
-            if (E)
-                totalCost += myHero.Spellbook.GetSpell(SpellSlot.E).ManaCost;
-            if (R)
-                totalCost += myHero.Spellbook.GetSpell(SpellSlot.R).ManaCost;
+            if (q)
+                totalCost += MyHero.Spellbook.GetSpell(SpellSlot.Q).ManaCost;
+            if (w)
+                totalCost += MyHero.Spellbook.GetSpell(SpellSlot.W).ManaCost;
+            if (e)
+                totalCost += MyHero.Spellbook.GetSpell(SpellSlot.E).ManaCost;
+            if (r)
+                totalCost += MyHero.Spellbook.GetSpell(SpellSlot.R).ManaCost;
 
-            if (myHero.Mana >= totalCost)
+            if (MyHero.Mana >= totalCost)
                 return true;
             else
                 return false;
@@ -527,15 +525,15 @@ namespace AkaliShadow
         {
             get
             {
-                var assassinRange = targetSelectorMenu.Item("AssassinSearchRange").GetValue<Slider>().Value;
+                var assassinRange = TargetSelectorMenu.Item("AssassinSearchRange").GetValue<Slider>().Value;
                 var vEnemy = ObjectManager.Get<Obj_AI_Hero>().Where(
                 enemy => enemy.Team != ObjectManager.Player.Team
                       && !enemy.IsDead && enemy.IsVisible
-                      && targetSelectorMenu.Item("Assassin" + enemy.ChampionName) != null
-                      && targetSelectorMenu.Item("Assassin" + enemy.ChampionName).GetValue<bool>()
+                      && TargetSelectorMenu.Item("Assassin" + enemy.ChampionName) != null
+                      && TargetSelectorMenu.Item("Assassin" + enemy.ChampionName).GetValue<bool>()
                       && ObjectManager.Player.Distance(enemy.ServerPosition) < assassinRange);
 
-                if (targetSelectorMenu.Item("AssassinSelectOption").GetValue<StringList>().SelectedIndex == 1)
+                if (TargetSelectorMenu.Item("AssassinSelectOption").GetValue<StringList>().SelectedIndex == 1)
                 {
                     vEnemy = (from vEn in vEnemy select vEn).OrderByDescending(vEn => vEn.MaxHealth);
                 }
@@ -545,23 +543,53 @@ namespace AkaliShadow
             }
         }
 
-        private static void InitializeWardSpots()
+        private static void InitializeLevelUpManager()
         {
-            _WardSpots = new List<Vector3>();
-            _WardSpots.Add(new Vector3(7451.664f, 6538.447f, 33.74536f));
-            _WardSpots.Add(new Vector3(8518.179f, 7240.318f, 40.60852f));
-            _WardSpots.Add(new Vector3(8845.78f, 5213.672f, 33.61487f));
-            _WardSpots.Add(new Vector3(11504.19f, 5433.52f, 30.58154f));
-            _WardSpots.Add(new Vector3(11771.57f, 6313.124f, 51.80713f));
-            _WardSpots.Add(new Vector3(12778.93f, 2197.325f, 51.68604f));
-            _WardSpots.Add(new Vector3(7475.538f, 3373.856f, 52.57471f));
-            _WardSpots.Add(new Vector3(3373.385f, 7560.835f, 50.81982f));
-            _WardSpots.Add(new Vector3(1672.145f, 12495.21f, 52.83826f));
-            _WardSpots.Add(new Vector3(2200.103f, 12940.9f, 52.83813f));
-            _WardSpots.Add(new Vector3(4835.833f, 12076.87f, 56.44629f));
-            _WardSpots.Add(new Vector3(7368.242f, 11604.35f, 51.2417f));
-            _WardSpots.Add(new Vector3(7337.794f, 8310.077f, 14.54712f));
-            _WardSpots.Add(new Vector3(6377.225f, 7541.464f, -28.97229f));
+
+            var priority1 = new int[] { 1, 2, 1, 3, 1, 4, 1, 3, 1, 3, 4, 3, 3, 2, 2, 4, 2, 2 };
+            LevelUpManager = new LevelUpManager();
+            LevelUpManager.Add("R > Q > E > W ", priority1);
+        }
+
+        static bool IsWall(Vector2 pos)
+        {
+            return (NavMesh.GetCollisionFlags(pos.X, pos.Y) == CollisionFlags.Wall ||
+            NavMesh.GetCollisionFlags(pos.X, pos.Y) == CollisionFlags.Building);
+        }
+
+        static bool IsWallBetween(Vector3 start, Vector3 end)
+        {
+            double count = Vector3.Distance(start, end);
+            for (uint i = 0; i <= count; i += 10)
+            {
+                Vector2 pos = start.Extend(end, i).To2D();
+                
+                if (IsWall(pos)) 
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void InitializeEvadeSpots()
+        {
+            _wardSpots = new List<Vector3>
+            {
+                new Vector3(7451.664f, 6538.447f, 33.74536f),
+                new Vector3(8518.179f, 7240.318f, 40.60852f),
+                new Vector3(8845.78f, 5213.672f, 33.61487f),
+                new Vector3(11504.19f, 5433.52f, 30.58154f),
+                new Vector3(11771.57f, 6313.124f, 51.80713f),
+                new Vector3(12778.93f, 2197.325f, 51.68604f),
+                new Vector3(7475.538f, 3373.856f, 52.57471f),
+                new Vector3(3373.385f, 7560.835f, 50.81982f),
+                new Vector3(1672.145f, 12495.21f, 52.83826f),
+                new Vector3(2200.103f, 12940.9f, 52.83813f),
+                new Vector3(4835.833f, 12076.87f, 56.44629f),
+                new Vector3(7368.242f, 11604.35f, 51.2417f),
+                new Vector3(7337.794f, 8310.077f, 14.54712f),
+                new Vector3(6377.225f, 7541.464f, -28.97229f)
+            };
         }
         #endregion
     }
