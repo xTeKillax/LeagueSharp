@@ -140,7 +140,7 @@ namespace AkaliShadow
             AntiGapcloser.OnEnemyGapcloser += AntiGapcloser_OnEnemyGapcloser;
 
             //debug_output = new System.IO.StreamWriter("c:\\AkaliShadow.log");
-            Game.PrintChat("<font color = \"#6B9FE3\">Akali Shadow</font><font color = \"#E3AF6B\"> by BestAkaliAfrica</font>. You like ? Buy a coffee to Joduskame or me :p");
+            Game.PrintChat("<font color = \"#6B9FE3\">Akali Shadow</font><font color = \"#E3AF6B\"> by BestAkaliAfrica</font>.");
         }
 
         private static void AntiGapcloser_OnEnemyGapcloser(ActiveGapcloser gapcloser)
