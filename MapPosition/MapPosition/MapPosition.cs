@@ -142,10 +142,7 @@ namespace MapPosition
 
         private static bool IsPointInPolygon(Point[] path, Vector3 pt)
         {
-            if (PointInPolygon(path, pt) == 0)
-                return false;
-            else
-                return true;
+            return !(PointInPolygon(path, pt) == 0)
         }
         #endregion
 
